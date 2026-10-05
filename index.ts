@@ -1,3 +1,4 @@
+import type { Plugin as V1Plugin } from "@opencode-ai/plugin";
 import type { Plugin } from "@opencode/plugin";
 import type { Skill } from "@opencode/schema";
 import { readFileSync } from "node:fs";
@@ -33,6 +34,31 @@ function parseSkill(file: string): { name: string; description: string; body: st
 
 export default {
   id: "tavily",
+  // V1 calls server(); V2 calls setup(). The hooks use their respective APIs.
+  async server() {
+    return {
+      async config(input) {
+        input.instructions ??= [];
+        // The V1 SDK's Config type still omits the runtime skills setting.
+        const config = input as typeof input & { skills?: { paths?: string[] } };
+        config.skills ??= {};
+        config.skills.paths ??= [];
+        const installPath = join(current_dir, "skills", "tavily", "rules", "install.md");
+        const skillsPath = join(current_dir, "skills");
+        if (!input.instructions.includes(installPath)) {
+          input.instructions.push(installPath);
+        }
+        if (!config.skills.paths.includes(skillsPath)) {
+          config.skills.paths.push(skillsPath);
+        }
+      },
+      "shell.env": async (_input, output) => {
+        if (process.env.TAVILY_API_KEY) {
+          output.env.TAVILY_API_KEY = process.env.TAVILY_API_KEY;
+        }
+      },
+    };
+  },
   async setup(ctx) {
     const skillPath = join(current_dir, "skills", "tavily", "SKILL.md");
     const { name, description, body } = parseSkill(skillPath);
@@ -63,4 +89,4 @@ export default {
       }
     });
   },
-} satisfies Plugin.Plugin;
+} satisfies Plugin.Plugin & { server: V1Plugin };
