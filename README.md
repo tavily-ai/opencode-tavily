@@ -2,9 +2,22 @@
 
 OpenCode plugin for [Tavily](https://tavily.com) — gives your AI agent reliable web search, content extraction, crawling, URL discovery, and deep research with citations.
 
+Supports OpenCode **v1.18.29+ (1.x)** and **v2** using OpenCode's [documented dual-version entrypoint](https://opencode.ai/v2/docs/build/plugins/migrate-v1): v1 calls `server()`, and v2 calls `setup()`.
+
 ## Installation
 
-Add the plugin to your `opencode.json`:
+Add the plugin to your `opencode.json`. The configuration key differs between versions.
+
+### OpenCode v2
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["opencode-tavily"]
+}
+```
+
+### OpenCode v1.18.29+
 
 ```json
 {
@@ -12,6 +25,30 @@ Add the plugin to your `opencode.json`:
   "plugin": ["opencode-tavily"]
 }
 ```
+
+OpenCode installs the package automatically on next launch
+
+### Install from Git
+
+Use the Git source instead of the npm package name. For v2:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["github:tavily-ai/opencode-tavily"]
+}
+```
+
+For v1.18.29+:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["github:tavily-ai/opencode-tavily"]
+}
+```
+
+### Install the Tavily CLI
 
 Then install the Tavily CLI globally:
 
