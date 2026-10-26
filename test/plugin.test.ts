@@ -155,3 +155,16 @@ describe("dual-version plugin", () => {
     assert.deepEqual(event.env, { TAVILY_API_KEY: "existing" });
   });
 });
+
+describe("bundled CLI instructions", () => {
+  it("only documents CLI forms that exist", () => {
+    // tvly declares --api-key on `login`, not as a global or per-command option.
+    assert.doesNotMatch(readFileSync(installPath, "utf8"), /tvly --api-key/);
+  });
+
+  it("states the API defaults for search", () => {
+    const skill = readFileSync(skillPath, "utf8");
+    assert.match(skill, /--max-results` — 0–20 \(default: 10/);
+    assert.match(skill, /--chunks-per-source` — 1–3 \(`basic`, `advanced` and `fast`/);
+  });
+});
