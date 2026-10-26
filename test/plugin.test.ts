@@ -59,13 +59,18 @@ async function setupV2() {
 
 describe("dual-version plugin", () => {
   let originalKey: string | undefined;
+  let originalName: string | undefined;
   beforeEach(() => {
     originalKey = process.env.TAVILY_API_KEY;
+    originalName = process.env.TAVILY_CLIENT_NAME;
     delete process.env.TAVILY_API_KEY;
+    delete process.env.TAVILY_CLIENT_NAME;
   });
   afterEach(() => {
     if (originalKey === undefined) delete process.env.TAVILY_API_KEY;
     else process.env.TAVILY_API_KEY = originalKey;
+    if (originalName === undefined) delete process.env.TAVILY_CLIENT_NAME;
+    else process.env.TAVILY_CLIENT_NAME = originalName;
   });
 
   it("default-exports one definition with both version entrypoints", () => {
@@ -99,14 +104,14 @@ describe("dual-version plugin", () => {
     process.env.TAVILY_API_KEY = "tvly-test-only";
     const output = { env: { KEEP: "value" } as Record<string, string> };
     await hooks["shell.env"]({ cwd: root }, output);
-    assert.deepEqual(output.env, { KEEP: "value", TAVILY_API_KEY: "tvly-test-only" });
+    assert.deepEqual(output.env, { KEEP: "value", TAVILY_API_KEY: "tvly-test-only", TAVILY_CLIENT_NAME: "opencode" });
   });
 
   it("V1 leaves the environment unchanged when no API key is set", async () => {
     const hooks = await plugin.server();
     const output = { env: { TAVILY_API_KEY: "existing" } };
     await hooks["shell.env"]({ cwd: root }, output);
-    assert.deepEqual(output.env, { TAVILY_API_KEY: "existing" });
+    assert.deepEqual(output.env, { TAVILY_API_KEY: "existing", TAVILY_CLIENT_NAME: "opencode" });
   });
 
   it("V2 registers the packaged skill with parsed frontmatter and a replayable transform", async () => {
@@ -145,13 +150,66 @@ describe("dual-version plugin", () => {
     process.env.TAVILY_API_KEY = "tvly-test-only";
     const event = { env: { KEEP: "value" } as Record<string, string> };
     await hooks.get("shell.create.before")!(event);
-    assert.deepEqual(event.env, { KEEP: "value", TAVILY_API_KEY: "tvly-test-only" });
+    assert.deepEqual(event.env, { KEEP: "value", TAVILY_API_KEY: "tvly-test-only", TAVILY_CLIENT_NAME: "opencode" });
   });
 
   it("V2 leaves the environment unchanged when no API key is set", async () => {
     const { hooks } = await setupV2();
     const event = { env: { TAVILY_API_KEY: "existing" } };
     await hooks.get("shell.create.before")!(event);
-    assert.deepEqual(event.env, { TAVILY_API_KEY: "existing" });
+    assert.deepEqual(event.env, { TAVILY_API_KEY: "existing", TAVILY_CLIENT_NAME: "opencode" });
+  });
+});
+
+describe("client name for the tvly CLI", () => {
+  let original: string | undefined;
+  beforeEach(() => {
+    original = process.env.TAVILY_CLIENT_NAME;
+    delete process.env.TAVILY_CLIENT_NAME;
+  });
+  afterEach(() => {
+    if (original === undefined) delete process.env.TAVILY_CLIENT_NAME;
+    else process.env.TAVILY_CLIENT_NAME = original;
+  });
+
+  it("V1 sets TAVILY_CLIENT_NAME=opencode by default and preserves explicit values", async () => {
+    const hooks = await plugin.server();
+    const output = { env: {} as Record<string, string> };
+    await hooks["shell.env"]({ cwd: root }, output);
+    assert.equal(output.env.TAVILY_CLIENT_NAME, "opencode");
+    const explicit = { env: { TAVILY_CLIENT_NAME: "my-team" } as Record<string, string> };
+    await hooks["shell.env"]({ cwd: root }, explicit);
+    assert.equal(explicit.env.TAVILY_CLIENT_NAME, "my-team");
+    process.env.TAVILY_CLIENT_NAME = "from-process";
+    const fromProcess = { env: {} as Record<string, string> };
+    await hooks["shell.env"]({ cwd: root }, fromProcess);
+    assert.equal(fromProcess.env.TAVILY_CLIENT_NAME, "from-process");
+  });
+
+  it("V2 sets TAVILY_CLIENT_NAME=opencode by default and preserves explicit values", async () => {
+    const { hooks } = await setupV2();
+    const event = { env: {} as Record<string, string> };
+    await hooks.get("shell.create.before")!(event);
+    assert.equal(event.env.TAVILY_CLIENT_NAME, "opencode");
+    const explicit = { env: { TAVILY_CLIENT_NAME: "my-team" } as Record<string, string> };
+    await hooks.get("shell.create.before")!(explicit);
+    assert.equal(explicit.env.TAVILY_CLIENT_NAME, "my-team");
+    process.env.TAVILY_CLIENT_NAME = "from-process";
+    const fromProcess = { env: {} as Record<string, string> };
+    await hooks.get("shell.create.before")!(fromProcess);
+    assert.equal(fromProcess.env.TAVILY_CLIENT_NAME, "from-process");
+  });
+});
+
+describe("bundled CLI instructions", () => {
+  it("only documents CLI forms that exist", () => {
+    // tvly declares --api-key on `login`, not as a global or per-command option.
+    assert.doesNotMatch(readFileSync(installPath, "utf8"), /tvly --api-key/);
+  });
+
+  it("states the API defaults for search", () => {
+    const skill = readFileSync(skillPath, "utf8");
+    assert.match(skill, /--max-results` — 0–20 \(default: 10/);
+    assert.match(skill, /--chunks-per-source` — 1–3 \(`basic`, `advanced` and `fast`/);
   });
 });

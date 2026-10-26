@@ -52,10 +52,11 @@ If browser login is unavailable, set the API key:
 export TAVILY_API_KEY="tvly-YOUR_KEY"
 ```
 
-Or pass it per command:
+Or store it once with the CLI (`tvly` has no per-command `--api-key` flag):
 
 ```bash
-tvly --api-key tvly-YOUR_KEY search "your query" --client-name opencode
+tvly login --api-key "tvly-YOUR_KEY"
+tvly search "your query" --client-name opencode
 ```
 
 Always include `--client-name opencode` on `search`, `extract`, `map`, `crawl`, and `research` (after the subcommand) for request attribution.

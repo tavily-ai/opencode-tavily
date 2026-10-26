@@ -7,6 +7,17 @@ import { fileURLToPath } from "node:url";
 
 const current_dir = dirname(fileURLToPath(import.meta.url));
 
+const DEFAULT_CLIENT_NAME = "opencode";
+
+/**
+ * Identify this integration to Tavily. The tvly CLI reads TAVILY_CLIENT_NAME; an explicit value from the
+ * caller's environment or the shell event is never overwritten. The skill still tells the agent to pass
+ * --client-name opencode for CLI versions that predate the environment variable.
+ */
+function withClientName(env: Record<string, string | undefined>) {
+  env.TAVILY_CLIENT_NAME ||= process.env.TAVILY_CLIENT_NAME || DEFAULT_CLIENT_NAME;
+}
+
 /**
  * Parse a skill file's YAML frontmatter without a YAML dependency.
  * Returns the `name`, the block-style `description`, and the body below the frontmatter.
@@ -56,6 +67,7 @@ export default {
         if (process.env.TAVILY_API_KEY) {
           output.env.TAVILY_API_KEY = process.env.TAVILY_API_KEY;
         }
+        withClientName(output.env);
       },
     };
   },
@@ -87,6 +99,7 @@ export default {
       if (process.env.TAVILY_API_KEY) {
         event.env.TAVILY_API_KEY = process.env.TAVILY_API_KEY;
       }
+      withClientName(event.env);
     });
   },
 } satisfies Plugin.Plugin & { server: V1Plugin };

@@ -138,7 +138,7 @@ tvly search "landscapes" --client-name opencode --include-images --include-image
 
 - `--client-name` — always `opencode` (request attribution)
 - `--depth` — `ultra-fast`, `fast`, `basic` (default), `advanced`
-- `--max-results` — 0–20 (default: 5)
+- `--max-results` — 0–20 (default: 10, the API default)
 - `--topic` — `general`, `news`, `finance`
 - `--time-range` — `day`, `week`, `month`, `year`
 - `--start-date` / `--end-date` — `YYYY-MM-DD`
@@ -147,7 +147,7 @@ tvly search "landscapes" --client-name opencode --include-images --include-image
 - `--include-answer` — `basic` or `advanced`
 - `--include-raw-content` — `markdown` or `text`
 - `--include-images` / `--include-image-descriptions`
-- `--chunks-per-source` — 1–5 (`advanced`/`fast` depth only)
+- `--chunks-per-source` — 1–3 (`basic`, `advanced` and `fast` depth)
 - `-o, --output` / `--json`
 
 ### Extract — Content from one or more URLs
